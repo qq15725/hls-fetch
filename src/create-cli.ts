@@ -20,8 +20,19 @@ export function createCli(options: Options) {
       output = path.resolve(cwd, output)
       const number = options.number ?? 5
       const content = await fetch(url).then(res => res.text())
-      const chunks = content.match(/.+\.ts/ig)
-      if (!chunks) return
+      const chunks: string[] = []
+      let xKeyUrl: string | undefined
+      let i = 0
+      const indexM3u8ConTent = content
+        .replace(/.+\.ts/ig, val => {
+          chunks.push(val)
+          return `${ i++ }.ts`
+        })
+        .replace(/#EXT-X-KEY.*URI="(.+)".*/ig, (val, url) => {
+          xKeyUrl = url
+          return val.replace(url, 'x.key')
+        })
+      if (!chunks.length) return
       const total = chunks.length
       const baseUrl = url.substring(0, url.length - path.basename(url).length)
       const dir = path.join(path.dirname(output), path.basename(output).split('.')[0])
@@ -29,14 +40,19 @@ export function createCli(options: Options) {
         fs.mkdirSync(dir, { recursive: true })
       }
 
+      if (xKeyUrl) {
+        const xKey = path.join(dir, 'x.key')
+        if (!fs.existsSync(xKey)) {
+          const keyContent = await fetch(xKeyUrl).then(res => res.arrayBuffer())
+          fs.writeFileSync(xKey, Buffer.from(keyContent))
+        }
+      }
+
       const indexM3u3 = path.join(dir, 'index.m3u8')
       if (!fs.existsSync(indexM3u3)) {
-        let i = 0
         fs.writeFileSync(
           indexM3u3,
-          content.replace(/.+\.ts/ig, () => {
-            return `${ i++ }.ts`
-          }),
+          indexM3u8ConTent,
           'utf8',
         )
       }
@@ -71,23 +87,12 @@ export function createCli(options: Options) {
         }),
       )
 
-      const ffconcat = path.join(dir, 'ffconcat.txt')
-      if (!fs.existsSync(ffconcat)) {
-        fs.writeFileSync(
-          ffconcat,
-          [
-            'ffconcat version 1.0',
-            ...chunks.map((_, index) => `file ${ index }.ts`),
-          ].join('\n'),
-          'utf8',
-        )
-      }
-
       bar.update(1)
       bar.terminate()
 
       const ffmpeg = createFfmpeg([
-        '-i', ffconcat,
+        '-allowed_extensions', 'ALL',
+        '-i', indexM3u3,
         '-acodec', 'copy',
         '-vcodec', 'copy',
         '-absf', 'aac_adtstoasc',
@@ -95,6 +100,8 @@ export function createCli(options: Options) {
       ])
 
       await ffmpeg.await()
+
+      fs.rmdirSync(dir)
     })
 
   cli

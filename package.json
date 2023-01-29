@@ -38,7 +38,7 @@
     "stub": "unbuild --stub",
     "build": "unbuild",
     "lint": "eslint .",
-    "release": "bumpp package.json --commit \"chore(release): publish v%s\" --push --tag && pnpm publish",
+    "release": "bumpp package.json --commit \"chore(release): publish v%s\" --push --tag && pnpm build && pnpm publish",
     "hls-fetch": "node ./bin/index.mjs"
   },
   "devDependencies": {
