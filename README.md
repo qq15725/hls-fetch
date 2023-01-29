@@ -1,29 +1,13 @@
-<h1 align="center">pkg-name</h1>
+<h1 align="center">hls-fetch</h1>
 
 <p align="center">
-  <a href="https://github.com/qq15725/pkg-name/blob/master/LICENSE" class="mr-3">
-    <img src="https://img.shields.io/npm/l/pkg-name.svg" alt="License">
+  <a href="https://github.com/qq15725/hls-fetch/blob/master/LICENSE" class="mr-3">
+    <img src="https://img.shields.io/npm/l/hls-fetch.svg" alt="License">
   </a>
-  <a href="https://www.npmjs.com/package/pkg-name">
-    <img src="https://img.shields.io/npm/v/pkg-name.svg" alt="Version">
+  <a href="https://www.npmjs.com/package/hls-fetch">
+    <img src="https://img.shields.io/npm/v/hls-fetch.svg" alt="Version">
   </a>
-  <a href="https://cdn.jsdelivr.net/npm/pkg-name/dist/index.js">
-    <img src="https://img.shields.io/bundlephobia/minzip/pkg-name" alt="Minzip">
+  <a href="https://cdn.jsdelivr.net/npm/hls-fetch/dist/index.js">
+    <img src="https://img.shields.io/bundlephobia/minzip/hls-fetch" alt="Minzip">
   </a>
 </p>
-
-## Try it now!
-
-### GitHub Template
-
-[Create a repo from this template on GitHub](https://github.com/qq15725/starter-ts-cli/generate).
-
-### Clone to local
-
-If you prefer to do it manually with the cleaner git history
-
-```bash
-npx degit qq15725/starter-ts-cli my-ts-cli
-cd my-ts-cli
-pnpm i # If you don't have pnpm installed, run: npm install -g pnpm
-```

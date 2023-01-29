@@ -1,21 +1,21 @@
 {
-  "name": "pkg-name",
+  "name": "hls-fetch",
   "type": "module",
   "version": "0.0.0",
   "packageManager": "pnpm@7.9.0",
   "description": "",
   "author": "wxm",
   "license": "MIT",
-  "homepage": "https://github.com/qq15725/pkg-name",
+  "homepage": "https://github.com/qq15725/hls-fetch",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/qq15725/pkg-name.git"
+    "url": "git+https://github.com/qq15725/hls-fetch.git"
   },
   "engines": {
     "node": ">=14.18.1"
   },
   "bugs": {
-    "url": "https://github.com/qq15725/pkg-name/issues"
+    "url": "https://github.com/qq15725/hls-fetch/issues"
   },
   "keywords": [],
   "exports": {
@@ -28,7 +28,7 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "bin": {
-    "pkg-name": "./bin/index.mjs"
+    "hls-fetch": "./bin/index.mjs"
   },
   "files": [
     "bin",
@@ -39,7 +39,7 @@
     "build": "unbuild",
     "lint": "eslint .",
     "release": "bumpp package.json --commit \"chore(release): publish v%s\" --push --tag && pnpm publish",
-    "pkg-name": "node ./bin/index.mjs"
+    "hls-fetch": "node ./bin/index.mjs"
   },
   "devDependencies": {
     "@qq15725/eslint-config": "^1.1.0",
