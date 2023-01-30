@@ -6,6 +6,7 @@ import Progress from 'progress'
 import fetch from 'node-fetch'
 import { bin, version } from '../package.json'
 import { createFfmpeg } from './ffmpeg'
+import { parsePlaylist } from './hls'
 import type { Options } from './types'
 
 export function createCli(options: Options) {
@@ -18,44 +19,39 @@ export function createCli(options: Options) {
     .option('--number <number>', 'Concurrent requests')
     .action(async (url: string, output: string, options: Record<string, any>) => {
       output = path.resolve(cwd, output)
-      const number = options.number ?? 5
-      const content = await fetch(url).then(res => res.text())
-      const chunks: string[] = []
-      let xKeyUrl: string | undefined
-      let i = 0
-      const indexM3u8ConTent = content
-        .replace(/.+\.ts/ig, val => {
-          chunks.push(val)
-          return `${ i++ }.ts`
-        })
-        .replace(/#EXT-X-KEY.*URI="(.+)".*/ig, (val, url) => {
-          xKeyUrl = url
-          return val.replace(url, 'x.key')
-        })
-      if (!chunks.length) return
-      const total = chunks.length
       const baseUrl = url.substring(0, url.length - path.basename(url).length)
       const dir = path.join(path.dirname(output), path.basename(output).split('.')[0])
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true })
+      const { number = 5 } = options
+      let content = await fetch(url).then(res => res.text())
+      // eslint-disable-next-line prefer-const
+      let { streamUrls, xKeyUrls, chunkUrls, replacedContent } = parsePlaylist(content, baseUrl)
+      if (streamUrls.length) {
+        content = await fetch(streamUrls[0]).then(res => res.text())
+        const parsed = parsePlaylist(content, baseUrl)
+        xKeyUrls = parsed.xKeyUrls
+        chunkUrls = parsed.chunkUrls
+        replacedContent = parsed.replacedContent
       }
 
-      if (xKeyUrl) {
-        const xKey = path.join(dir, 'x.key')
-        if (!fs.existsSync(xKey)) {
-          const keyContent = await fetch(xKeyUrl).then(res => res.arrayBuffer())
-          fs.writeFileSync(xKey, Buffer.from(keyContent))
-        }
+      if (!chunkUrls.length) return
+      const total = chunkUrls.length
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+
+      if (xKeyUrls.length) {
+        fs.writeFileSync(
+          path.join(dir, 'x.key'),
+          Buffer.from(
+            await fetch(xKeyUrls[0]).then(res => res.arrayBuffer()),
+          ),
+        )
       }
 
       const indexM3u3 = path.join(dir, 'index.m3u8')
-      if (!fs.existsSync(indexM3u3)) {
-        fs.writeFileSync(
-          indexM3u3,
-          indexM3u8ConTent,
-          'utf8',
-        )
-      }
+      fs.writeFileSync(
+        indexM3u3,
+        replacedContent,
+        'utf8',
+      )
 
       const bar = new Progress(
         `${ colors.green('Downloading') } ${ colors.cyan('[:bar]') } :percent | Time: :elapseds`,
@@ -71,14 +67,10 @@ export function createCli(options: Options) {
       await Promise.all(
         [...new Array(number)].map(async () => {
           let chunkIndex = index++
-          while (chunks[chunkIndex]) {
-            let chunk = chunks[chunkIndex]
-            if (!/^http/.test(chunk)) {
-              chunk = `${ baseUrl }${ chunk }`
-            }
+          while (chunkUrls[chunkIndex]) {
             const filename = path.join(dir, `${ chunkIndex }.ts`)
             if (!fs.existsSync(filename)) {
-              const content = await fetch(chunk).then(res => res.arrayBuffer())
+              const content = await fetch(chunkUrls[chunkIndex]).then(res => res.arrayBuffer())
               fs.writeFileSync(filename, Buffer.from(content))
             }
             bar.update((index + 1) / total)
