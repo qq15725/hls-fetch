@@ -12,6 +12,12 @@ import type { Options } from './types'
 export function createCli(options: Options) {
   const { cwd } = options
 
+  const requestInit = {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+    },
+  }
+
   const cli = cac(Object.keys(bin)[0])
 
   cli
@@ -22,11 +28,11 @@ export function createCli(options: Options) {
       const baseUrl = url.substring(0, url.length - path.basename(url).length)
       const dir = path.join(path.dirname(output), path.basename(output).split('.')[0])
       const { number = 5 } = options
-      let content = await fetch(url).then(res => res.text())
+      let content = await fetch(url, requestInit).then(res => res.text())
       // eslint-disable-next-line prefer-const
       let { streamUrls, xKeyUrls, chunkUrls, replacedContent } = parsePlaylist(content, baseUrl)
       if (streamUrls.length) {
-        content = await fetch(streamUrls[0]).then(res => res.text())
+        content = await fetch(streamUrls[0], requestInit).then(res => res.text())
         const parsed = parsePlaylist(content, baseUrl)
         xKeyUrls = parsed.xKeyUrls
         chunkUrls = parsed.chunkUrls
@@ -41,7 +47,7 @@ export function createCli(options: Options) {
         fs.writeFileSync(
           path.join(dir, 'x.key'),
           Buffer.from(
-            await fetch(xKeyUrls[0]).then(res => res.arrayBuffer()),
+            await fetch(xKeyUrls[0], requestInit).then(res => res.arrayBuffer()),
           ),
         )
       }
@@ -70,7 +76,10 @@ export function createCli(options: Options) {
           while (chunkUrls[chunkIndex]) {
             const filename = path.join(dir, `${ chunkIndex }.ts`)
             if (!fs.existsSync(filename)) {
-              const content = await fetch(chunkUrls[chunkIndex]).then(res => res.arrayBuffer())
+              const content = await fetch(chunkUrls[chunkIndex], requestInit).then(res => {
+                console.log(res.headers.raw())
+                return res.arrayBuffer()
+              })
               fs.writeFileSync(filename, Buffer.from(content))
             }
             bar.update((index + 1) / total)
